@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CuttingEngineContract",
+  "description": "Contrato de entrada e saída para o motor de otimização de corte linear 1D (First-Fit Decreasing) para barras de 6,00 metros de serralheria.",
+  "type": "object",
+  "required": ["input", "output"],
+  "properties": {
+    "input": {
+      "type": "object",
+      "required": ["comprimentoBarraPadraoMm", "kerfPerdaCorteMm", "demandas"],
+      "properties": {
+        "comprimentoBarraPadraoMm": {
+          "type": "number",
+          "default": 6000,
+          "description": "Comprimento padrão da barra comercial em milímetros (6000 mm = 6 metros)"
+        },
+        "kerfPerdaCorteMm": {
+          "type": "number",
+          "default": 3,
+          "description": "Espessura da lâmina de corte / desgaste por secção em milímetros"
+        },
+        "demandas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["pecaId", "perfilId", "comprimentoMm", "quantidade", "itemOrigemId"],
+            "properties": {
+              "pecaId": { "type": "string" },
+              "perfilId": { "type": "string" },
+              "descricao": { "type": "string" },
+              "comprimentoMm": { "type": "number", "minimum": 1 },
+              "quantidade": { "type": "integer", "minimum": 1 },
+              "itemOrigemId": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["totalBarras6m", "comprimentoLinearTotalMm", "aproveitamentoPercentual", "barras"],
+      "properties": {
+        "totalBarras6m": { "type": "integer", "minimum": 1 },
+        "comprimentoLinearTotalMm": { "type": "number" },
+        "aproveitamentoPercentual": { "type": "number", "minimum": 0, "maximum": 100 },
+        "barras": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["numeroBarra", "espacoUtilizadoMm", "sobraMm", "pecas"],
+            "properties": {
+              "numeroBarra": { "type": "integer" },
+              "espacoUtilizadoMm": { "type": "number" },
+              "sobraMm": { "type": "number" },
+              "aproveitavel": { "type": "boolean" },
+              "pecas": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["pecaId", "itemOrigemId", "tamanhoMm", "posicaoInicioMm", "posicaoFimMm"],
+                  "properties": {
+                    "pecaId": { "type": "string" },
+                    "itemOrigemId": { "type": "string" },
+                    "descricaoPeca": { "type": "string" },
+                    "tamanhoMm": { "type": "number" },
+                    "posicaoInicioMm": { "type": "number" },
+                    "posicaoFimMm": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OrcamentoBackupSchema",
+  "description": "Contrato e schema para exportação/importação de backups e persistência de orçamentos de serralheria.",
+  "type": "object",
+  "required": ["versaoBackup", "dataGeracao", "empresa", "clientes", "orcamentos", "catalogoMateriais"],
+  "properties": {
+    "versaoBackup": { "type": "string", "const": "1.0.0" },
+    "dataGeracao": { "type": "string", "format": "date-time" },
+    "empresa": {
+      "type": "object",
+      "required": ["nomeFantasia", "telefoneWhatsApp", "chavePix", "taxaHoraOficina", "taxaHoraInstalacao"],
+      "properties": {
+        "nomeFantasia": { "type": "string" },
+        "telefoneWhatsApp": { "type": "string" },
+        "chavePix": { "type": "string" },
+        "taxaHoraOficina": { "type": "number", "minimum": 0 },
+        "taxaHoraInstalacao": { "type": "number", "minimum": 0 }
+      }
+    },
+    "clientes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "nome", "telefoneWhatsApp"]
+      }
+    },
+    "catalogoMateriais": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "descricao", "precoBarra6m", "comprimentoBarraMm"]
+      }
+    },
+    "orcamentos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "numeroSequencial",
+          "status",
+          "clienteId",
+          "itens",
+          "custoDiretoTotal",
+          "precoVendaFinal"
+        ]
+      }
+    }
+  }
+}

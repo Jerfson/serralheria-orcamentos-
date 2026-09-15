@@ -12,6 +12,7 @@ export interface ModeloParametricoDef {
   horasInstalacaoBase: number; // por m²
   acabamentoPadrao: string;
   acessoriosInclusosIds: string[];
+  numeroTravessasPadrao: number; // Padrão recomendado de fábrica
 }
 
 export const CATALOGO_MODELOS_PADRAO: ModeloParametricoDef[] = [
@@ -26,7 +27,8 @@ export const CATALOGO_MODELOS_PADRAO: ModeloParametricoDef[] = [
     horasFabricacaoBase: 1.8,
     horasInstalacaoBase: 0.7,
     acabamentoPadrao: 'Pintura primer anticorrosivo cinza zarcão',
-    acessoriosInclusosIds: ['kit-basculante-pesos-roldanas', 'fechadura-sobrepor-stam']
+    acessoriosInclusosIds: ['kit-basculante-pesos-roldanas', 'fechadura-sobrepor-stam'],
+    numeroTravessasPadrao: 1
   },
   {
     tipo: 'portao_deslizante',
@@ -39,7 +41,8 @@ export const CATALOGO_MODELOS_PADRAO: ModeloParametricoDef[] = [
     horasFabricacaoBase: 1.4,
     horasInstalacaoBase: 0.6,
     acabamentoPadrao: 'Pintura primer anticorrosivo cinza zarcão',
-    acessoriosInclusosIds: ['fechadura-bico-papagaio-tetra', 'roldana-canal-v-3pol', 'cantoneira-1-ch1-8']
+    acessoriosInclusosIds: ['fechadura-bico-papagaio-tetra', 'roldana-canal-v-3pol', 'cantoneira-1-ch1-8'],
+    numeroTravessasPadrao: 0
   },
   {
     tipo: 'grade_tubo',
@@ -52,7 +55,8 @@ export const CATALOGO_MODELOS_PADRAO: ModeloParametricoDef[] = [
     horasFabricacaoBase: 1.2,
     horasInstalacaoBase: 0.5,
     acabamentoPadrao: 'Pintura primer anticorrosivo cinza zarcão',
-    acessoriosInclusosIds: []
+    acessoriosInclusosIds: [],
+    numeroTravessasPadrao: 0
   },
   {
     tipo: 'corrimao',
@@ -65,7 +69,8 @@ export const CATALOGO_MODELOS_PADRAO: ModeloParametricoDef[] = [
     horasFabricacaoBase: 1.5,
     horasInstalacaoBase: 0.8,
     acabamentoPadrao: 'Pintura primer anticorrosivo cinza zarcão',
-    acessoriosInclusosIds: []
+    acessoriosInclusosIds: [],
+    numeroTravessasPadrao: 2
   },
   {
     tipo: 'cobertura',
@@ -78,7 +83,8 @@ export const CATALOGO_MODELOS_PADRAO: ModeloParametricoDef[] = [
     horasFabricacaoBase: 1.1,
     horasInstalacaoBase: 0.9,
     acabamentoPadrao: 'Pintura primer anticorrosivo cinza zarcão',
-    acessoriosInclusosIds: []
+    acessoriosInclusosIds: [],
+    numeroTravessasPadrao: 0
   },
   {
     tipo: 'personalizado',
@@ -91,6 +97,7 @@ export const CATALOGO_MODELOS_PADRAO: ModeloParametricoDef[] = [
     horasFabricacaoBase: 1.5,
     horasInstalacaoBase: 0.7,
     acabamentoPadrao: 'Pintura primer anticorrosivo cinza zarcão',
-    acessoriosInclusosIds: []
+    acessoriosInclusosIds: [],
+    numeroTravessasPadrao: 0
   }
 ];

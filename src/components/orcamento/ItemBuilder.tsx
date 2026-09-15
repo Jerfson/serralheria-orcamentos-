@@ -23,6 +23,7 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({ materiais, onAdicionar
   const [perfilQuadroId, setPerfilQuadroId] = useState<string>(modeloAtual.perfilQuadroPadraoId);
   const [perfilPreenchimentoId, setPerfilPreenchimentoId] = useState<string>(modeloAtual.perfilPreenchimentoPadraoId);
   const [espacamentoCm, setEspacamentoCm] = useState<number>(modeloAtual.espacamentoReguasPadraoCm);
+  const [numeroTravessas, setNumeroTravessas] = useState<number>(modeloAtual.numeroTravessasPadrao ?? 1);
 
   // Ao trocar modelo, sincronizar padrões
   const handleTrocaModelo = (novoTipo: TipoEstrutura) => {
@@ -31,6 +32,7 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({ materiais, onAdicionar
     setPerfilQuadroId(m.perfilQuadroPadraoId);
     setPerfilPreenchimentoId(m.perfilPreenchimentoPadraoId);
     setEspacamentoCm(m.espacamentoReguasPadraoCm);
+    setNumeroTravessas(m.numeroTravessasPadrao ?? 0);
     if (!descricao || CATALOGO_MODELOS_PADRAO.some(mod => mod.nome === descricao)) {
       setDescricao(m.nome);
     }
@@ -43,7 +45,8 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({ materiais, onAdicionar
     alturaM,
     perfilQuadroId,
     perfilPreenchimentoId,
-    espacamentoReguasCm: espacamentoCm
+    espacamentoReguasCm: espacamentoCm,
+    numeroTravessas
   });
 
   const handleSalvarItem = (e: React.FormEvent) => {
@@ -169,8 +172,8 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({ materiais, onAdicionar
         </div>
       </div>
 
-      {/* Perfis Selecionados */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+      {/* Perfis Selecionados, Travessas e Quantidade */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
         <div>
           <label className="block text-xs text-slate-400 mb-1">
             Perfil do Requadro / Quadro
@@ -203,6 +206,39 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({ materiais, onAdicionar
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-xs text-slate-400 mb-1 flex items-center justify-between">
+            <span>Travessas Intermediárias</span>
+            <span className="text-[10px] text-amber-500 font-mono">Reforço</span>
+          </label>
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={() => setNumeroTravessas(prev => Math.max(0, prev - 1))}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-l-lg border border-r-0 border-slate-700 text-xs font-bold transition-colors"
+              title="Diminuir travessas"
+            >
+              -
+            </button>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              value={numeroTravessas}
+              onChange={(e) => setNumeroTravessas(Math.max(0, Math.min(20, parseInt(e.target.value, 10) || 0)))}
+              className="w-full bg-slate-950 border-y border-slate-800 py-1.5 text-center text-sm font-semibold text-slate-100 focus:outline-none focus:border-amber-500"
+            />
+            <button
+              type="button"
+              onClick={() => setNumeroTravessas(prev => Math.min(20, prev + 1))}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-r-lg border border-l-0 border-slate-700 text-xs font-bold transition-colors"
+              title="Aumentar travessas"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         <div>

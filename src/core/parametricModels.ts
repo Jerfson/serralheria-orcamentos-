@@ -9,6 +9,7 @@ export interface ParametrosEstrutura {
   perfilQuadroId?: string;
   perfilPreenchimentoId?: string;
   espacamentoReguasCm?: number;
+  numeroTravessas?: number;
 }
 
 export interface ResultadoParametrico {
@@ -32,6 +33,10 @@ export function calcularPecasEstrutura(params: ParametrosEstrutura): ResultadoPa
   const perfilPreenchimento = params.perfilPreenchimentoId || modelo.perfilPreenchimentoPadraoId;
   const espacamentoCm = params.espacamentoReguasCm || modelo.espacamentoReguasPadraoCm;
 
+  const numTravessas = params.numeroTravessas !== undefined
+    ? Math.max(0, Math.min(20, Math.floor(params.numeroTravessas)))
+    : (modelo.numeroTravessasPadrao ?? 0);
+
   const pecas: PecaLinearDemanda[] = [];
 
   switch (params.tipo) {
@@ -51,14 +56,16 @@ export function calcularPecasEstrutura(params: ParametrosEstrutura): ResultadoPa
         comprimentoMm: L_mm,
         quantidade: 2
       });
-      // Travessa central de reforço
-      pecas.push({
-        id: 'trav-central',
-        descricao: 'Travessa Central de Reforço',
-        perfilId: perfilQuadro,
-        comprimentoMm: L_mm,
-        quantidade: 1
-      });
+      // Travessa(s) intermediária(s) de reforço
+      if (numTravessas > 0) {
+        pecas.push({
+          id: 'trav-central',
+          descricao: numTravessas === 1 ? 'Travessa Central de Reforço' : 'Travessa Intermediária de Reforço',
+          perfilId: perfilQuadro,
+          comprimentoMm: L_mm,
+          quantidade: numTravessas
+        });
+      }
 
       // Réguas verticais de preenchimento (tubo 20x20)
       const numReguas = Math.max(1, Math.floor((params.larguraM * 100) / espacamentoCm) - 1);
@@ -97,6 +104,17 @@ export function calcularPecasEstrutura(params: ParametrosEstrutura): ResultadoPa
         quantidade: 1
       });
 
+      // Travessas intermediárias de reforço
+      if (numTravessas > 0) {
+        pecas.push({
+          id: 'trav-deslizante',
+          descricao: 'Travessa Intermediária de Reforço',
+          perfilId: perfilQuadro,
+          comprimentoMm: L_mm,
+          quantidade: numTravessas
+        });
+      }
+
       // Réguas verticais
       const numReguas = Math.max(1, Math.floor((params.larguraM * 100) / espacamentoCm) - 1);
       pecas.push({
@@ -125,6 +143,17 @@ export function calcularPecasEstrutura(params: ParametrosEstrutura): ResultadoPa
         comprimentoMm: L_mm,
         quantidade: 2
       });
+
+      // Travessas intermediárias de segurança / amarração
+      if (numTravessas > 0) {
+        pecas.push({
+          id: 'trav-grade',
+          descricao: 'Travessa Horizontal Intermediária',
+          perfilId: perfilQuadro,
+          comprimentoMm: L_mm,
+          quantidade: numTravessas
+        });
+      }
 
       // Barras verticais internas
       const numBarras = Math.max(1, Math.floor((params.larguraM * 100) / espacamentoCm));
@@ -156,14 +185,16 @@ export function calcularPecasEstrutura(params: ParametrosEstrutura): ResultadoPa
         comprimentoMm: 1000, // 1 metro de altura padrão NBR
         quantidade: numMontantes
       });
-      // Travessas intermediárias de proteção (2 linhas)
-      pecas.push({
-        id: 'linhas-intermediarias',
-        descricao: 'Linha Intermediária de Proteção',
-        perfilId: perfilPreenchimento,
-        comprimentoMm: L_mm,
-        quantidade: 2
-      });
+      // Travessas intermediárias de proteção (linhas)
+      if (numTravessas > 0) {
+        pecas.push({
+          id: 'linhas-intermediarias',
+          descricao: 'Linha Intermediária de Proteção',
+          perfilId: perfilPreenchimento,
+          comprimentoMm: L_mm,
+          quantidade: numTravessas
+        });
+      }
       break;
     }
 
@@ -186,6 +217,17 @@ export function calcularPecasEstrutura(params: ParametrosEstrutura): ResultadoPa
         comprimentoMm: L_mm,
         quantidade: numTercas
       });
+
+      // Travessas extras de contraventamento se solicitadas
+      if (numTravessas > 0) {
+        pecas.push({
+          id: 'trav-contraventamento',
+          descricao: 'Travessa de Contraventamento',
+          perfilId: perfilQuadro,
+          comprimentoMm: L_mm,
+          quantidade: numTravessas
+        });
+      }
       break;
     }
 
@@ -205,12 +247,23 @@ export function calcularPecasEstrutura(params: ParametrosEstrutura): ResultadoPa
         comprimentoMm: L_mm,
         quantidade: 2
       });
+
+      if (numTravessas > 0) {
+        pecas.push({
+          id: 'trav-personalizada',
+          descricao: 'Travessa / Divisória Horizontal',
+          perfilId: perfilQuadro,
+          comprimentoMm: L_mm,
+          quantidade: numTravessas
+        });
+      }
       break;
     }
   }
 
   // Horas estimadas
-  const horasFabricacao = Number((areaM2 * modelo.horasFabricacaoBase).toFixed(1));
+  const acrescimoHorasTravessas = numTravessas > 0 ? Number((numTravessas * 0.15).toFixed(1)) : 0;
+  const horasFabricacao = Number(((areaM2 * modelo.horasFabricacaoBase) + acrescimoHorasTravessas).toFixed(1));
   const horasInstalacao = Number((areaM2 * modelo.horasInstalacaoBase).toFixed(1));
 
   return {

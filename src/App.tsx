@@ -33,7 +33,8 @@ import {
   Check, 
   Eye, 
   Building2,
-  Layers
+  Layers,
+  Database
 } from 'lucide-react';
 
 export default function App() {
@@ -46,6 +47,7 @@ export default function App() {
   const [modalConfigAberto, setModalConfigAberto] = useState(false);
   const [modalMateriaisAberto, setModalMateriaisAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [sqliteConectado, setSqliteConectado] = useState(false);
 
   // Orçamento em Edição
   const [orcamentoAtual, setOrcamentoAtual] = useState<Orcamento>({
@@ -97,6 +99,9 @@ export default function App() {
 
   // Carregar dados iniciais
   const recarregarDados = async () => {
+    const conectado = await storageRepository.checkSqliteConnection();
+    setSqliteConectado(conectado);
+
     await storageRepository.ensureSeedData();
     const emp = await storageRepository.getEmpresaConfig();
     const clis = await storageRepository.getClientes();
@@ -406,6 +411,24 @@ export default function App() {
 
           {/* Ações da Direita */}
           <div className="flex items-center gap-2">
+            {sqliteConectado ? (
+              <span 
+                className="flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1.5 rounded-lg cursor-help"
+                title="Banco de Dados Relacional SQLite Ativo (data/serralheria.db)"
+              >
+                <Database className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden lg:inline">SQLite Conectado</span>
+              </span>
+            ) : (
+              <span 
+                className="flex items-center gap-1.5 text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2.5 py-1.5 rounded-lg cursor-help"
+                title="Operando no armazenamento local do navegador (IndexedDB)"
+              >
+                <Database className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden lg:inline">Modo Local</span>
+              </span>
+            )}
+
             <button
               type="button"
               onClick={() => setModalMateriaisAberto(true)}
@@ -421,7 +444,7 @@ export default function App() {
               onClick={handleSalvarOrcamento}
               disabled={salvando}
               className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition"
-              title="Salvar no IndexedDB local"
+              title="Salvar no banco de dados SQLite permanente"
             >
               <Save className="w-4 h-4 text-emerald-400" />
               <span className="hidden sm:inline">{salvando ? 'Salvando...' : 'Salvar'}</span>

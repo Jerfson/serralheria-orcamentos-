@@ -30,3 +30,9 @@ Thumbs.db
 *.tmp
 .vscode/
 .idea/
+
+# SQLite Database
+data/*.db
+data/*.db-wal
+data/*.db-shm
+!data/.gitkeep

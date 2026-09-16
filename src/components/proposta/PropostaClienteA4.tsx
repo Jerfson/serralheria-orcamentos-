@@ -102,8 +102,12 @@ export const PropostaClienteA4: React.FC<PropostaClienteA4Props> = ({
                 <h1 className="text-2xl font-black tracking-tight uppercase text-slate-950">
                   {empresaConfig.nomeFantasia}
                 </h1>
-                <p className="text-xs text-slate-600 font-medium">{empresaConfig.razaoSocial}</p>
-                <p className="text-xs text-slate-600">CNPJ: {empresaConfig.documento}</p>
+                {empresaConfig.razaoSocial && (
+                  <p className="text-xs text-slate-600 font-medium">{empresaConfig.razaoSocial}</p>
+                )}
+                {empresaConfig.documento && (
+                  <p className="text-xs text-slate-600">CNPJ/CPF: {empresaConfig.documento}</p>
+                )}
               </div>
             </div>
 

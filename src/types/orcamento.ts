@@ -95,7 +95,7 @@ export interface EmpresaConfig {
   id: string;
   nomeFantasia: string;
   razaoSocial?: string;
-  documento: string;
+  documento?: string;
   telefoneWhatsApp: string;
   email?: string;
   endereco: string;

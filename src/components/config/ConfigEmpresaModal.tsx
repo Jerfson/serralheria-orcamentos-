@@ -92,12 +92,12 @@ export const ConfigEmpresaModal: React.FC<ConfigEmpresaModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs text-slate-400 mb-1">CNPJ ou CPF *</label>
+              <label className="block text-xs text-slate-400 mb-1">CNPJ ou CPF (Opcional)</label>
               <input
                 type="text"
-                required
-                value={formData.documento}
+                value={formData.documento || ''}
                 onChange={(e) => setFormData({ ...formData, documento: e.target.value })}
+                placeholder="Ex: 00.000.000/0001-00 ou 000.000.000-00 (opcional)"
                 className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-100 focus:border-amber-500"
               />
             </div>

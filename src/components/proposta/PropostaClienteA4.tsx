@@ -1,16 +1,20 @@
 import React from 'react';
 import { Orcamento, EmpresaConfig } from '../../types/orcamento';
-import { Printer, MessageSquare, Copy, Check, ShieldCheck, MapPin, Phone, Mail, FileText } from 'lucide-react';
+import { Printer, MessageSquare, Copy, Check, ShieldCheck, MapPin, Phone, Mail, FileText, Save } from 'lucide-react';
 import { gerarMensagemWhatsApp, criarLinkWhatsApp } from '../../services/whatsappService';
 
 interface PropostaClienteA4Props {
   orcamento: Orcamento;
   empresaConfig: EmpresaConfig;
+  onSalvar?: () => void;
+  salvando?: boolean;
 }
 
 export const PropostaClienteA4: React.FC<PropostaClienteA4Props> = ({
   orcamento,
-  empresaConfig
+  empresaConfig,
+  onSalvar,
+  salvando = false
 }) => {
   const [copiado, setCopiado] = React.useState(false);
 
@@ -58,10 +62,22 @@ export const PropostaClienteA4: React.FC<PropostaClienteA4Props> = ({
             Abrir no WhatsApp
           </a>
 
+          {onSalvar && (
+            <button
+              type="button"
+              onClick={onSalvar}
+              disabled={salvando}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white transition shadow-md shadow-emerald-950 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              {salvando ? 'Salvando...' : 'Salvar no Histórico'}
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleImprimir}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-md shadow-amber-950"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition shadow-md shadow-amber-950 cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             Imprimir / Salvar PDF

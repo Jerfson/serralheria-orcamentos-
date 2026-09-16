@@ -397,6 +397,11 @@ export class SerralheriaSqliteDB {
     let numeroSequencial = orcamento.numeroSequencial;
     if (!numeroSequencial || numeroSequencial <= 0) {
       numeroSequencial = this.getProximoNumeroSequencial();
+    } else {
+      const emUsoPorOutro = this.db.prepare('SELECT id FROM orcamentos WHERE numero_sequencial = ? AND id != ?').get(numeroSequencial, id);
+      if (emUsoPorOutro) {
+        numeroSequencial = this.getProximoNumeroSequencial();
+      }
     }
 
     const dados = {

@@ -5,7 +5,7 @@ import { CATALOGO_PERFIS_PADRAO } from '../data/catalogoPerfis';
 import { CATALOGO_INSUMOS_PADRAO } from '../data/catalogoInsumos';
 
 const DB_NAME = 'SerralheriaPro_DB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const EMPRESA_CONFIG_PADRAO: EmpresaConfig = {
   id: 'default',
@@ -39,7 +39,7 @@ export class OfflineDatabase {
     if (!this.isSupported) return null;
     if (this.db) return this.db;
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onupgradeneeded = (event) => {
@@ -60,9 +60,18 @@ export class OfflineDatabase {
         }
         if (!db.objectStoreNames.contains('orcamentos')) {
           const orcStore = db.createObjectStore('orcamentos', { keyPath: 'id' });
-          orcStore.createIndex('numeroSequencial', 'numeroSequencial', { unique: true });
+          orcStore.createIndex('numeroSequencial', 'numeroSequencial', { unique: false });
           orcStore.createIndex('clienteId', 'clienteId', { unique: false });
           orcStore.createIndex('status', 'status', { unique: false });
+        } else {
+          const transaction = (event.target as IDBOpenDBRequest).transaction;
+          if (transaction) {
+            const orcStore = transaction.objectStore('orcamentos');
+            if (orcStore.indexNames.contains('numeroSequencial')) {
+              orcStore.deleteIndex('numeroSequencial');
+            }
+            orcStore.createIndex('numeroSequencial', 'numeroSequencial', { unique: false });
+          }
         }
       };
 
@@ -151,13 +160,32 @@ export class OfflineDatabase {
       return item;
     }
 
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(storeName, 'readwrite');
-      const store = transaction.objectStore(storeName);
-      const request = store.put(item);
+    return new Promise((resolve) => {
+      try {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.put(item);
 
-      request.onsuccess = () => resolve(item);
-      request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(item);
+        request.onerror = (err) => {
+          console.warn(`[offlineDB] Falha no store.put(${storeName}), salvando em fallback:`, err);
+          try {
+            const fallbackKey = `serralheria_${storeName}`;
+            const fallback = this.getFallback(fallbackKey);
+            const items = fallback ? JSON.parse(fallback) : [];
+            const index = items.findIndex((i: any) => i.id === item.id);
+            if (index >= 0) items[index] = item;
+            else items.push(item);
+            this.setFallback(fallbackKey, JSON.stringify(items));
+          } catch {
+            // Ignora
+          }
+          resolve(item);
+        };
+      } catch (err) {
+        console.warn(`[offlineDB] Erro de transação em ${storeName}:`, err);
+        resolve(item);
+      }
     });
   }
 

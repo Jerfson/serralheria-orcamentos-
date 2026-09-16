@@ -48,6 +48,14 @@ export default function App() {
   const [modalMateriaisAberto, setModalMateriaisAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [sqliteConectado, setSqliteConectado] = useState(false);
+  const [toastMensagem, setToastMensagem] = useState<{ texto: string; tipo: 'sucesso' | 'info' | 'alerta' } | null>(null);
+
+  const exibirToast = (texto: string, tipo: 'sucesso' | 'info' | 'alerta' = 'sucesso') => {
+    setToastMensagem({ texto, tipo });
+    setTimeout(() => {
+      setToastMensagem(null);
+    }, 4500);
+  };
 
   // Orçamento em Edição
   const [orcamentoAtual, setOrcamentoAtual] = useState<Orcamento>({
@@ -107,25 +115,39 @@ export default function App() {
     const clis = await storageRepository.getClientes();
     const mats = await storageRepository.getMateriais();
     const orcs = await storageRepository.getOrcamentos();
+    const proxNum = await storageRepository.getProximoNumeroSequencial();
 
     setEmpresaConfig(emp);
     setClientes(clis);
     setMateriais(mats);
     setOrcamentos(orcs);
 
-    // Se cliente demo existir, já vincular ao orçamento inicial
-    if (clis.length > 0 && !orcamentoAtual.clienteId) {
-      setOrcamentoAtual(prev => ({
-        ...prev,
-        clienteId: clis[0].id,
-        clienteSnapshot: clis[0]
-      }));
-    }
+    // Se orçamento em branco, atualizar número sequencial e cliente padrão
+    setOrcamentoAtual(prev => {
+      if (prev.itens.length === 0) {
+        return {
+          ...prev,
+          numeroSequencial: proxNum,
+          clienteId: prev.clienteId || clis[0]?.id || '',
+          clienteSnapshot: prev.clienteSnapshot?.nome ? prev.clienteSnapshot : (clis[0] || prev.clienteSnapshot)
+        };
+      }
+      return prev;
+    });
   };
 
   useEffect(() => {
     recarregarDados();
   }, []);
+
+  // Sempre que a aba de Histórico for aberta, recarregar os dados mais recentes do SQLite
+  useEffect(() => {
+    if (abaAtiva === 'historico') {
+      storageRepository.getOrcamentos().then(orcs => {
+        setOrcamentos(orcs);
+      });
+    }
+  }, [abaAtiva]);
 
   // 1. Recalcular Plano de Corte 1D das Barras de 6m sempre que os itens mudarem
   const planoCorteCalculado = useMemo(() => {
@@ -204,18 +226,49 @@ export default function App() {
   }, [planoCorteCalculado, custosDiretos, precificacao]);
 
   // Ações de Itens
-  const handleAdicionarItem = (item: ItemOrcamento) => {
-    setOrcamentoAtual(prev => ({
-      ...prev,
-      itens: [...prev.itens, item]
-    }));
+  const handleAdicionarItem = async (item: ItemOrcamento) => {
+    const novosItens = [...orcamentoAtual.itens, item];
+    const precoAdicional = item.subtotalPrecoVenda || (item.ajustesManuais?.precoVendaManual ? item.ajustesManuais.precoVendaManual * (item.quantidadeUnidades || 1) : 0);
+    const precoEstimado = (orcamentoAtual.precoVendaFinal || 0) + precoAdicional;
+
+    const atualizado: Orcamento = {
+      ...orcamentoAtual,
+      itens: novosItens,
+      precoVendaFinal: precoEstimado > 0 ? precoEstimado : orcamentoAtual.precoVendaFinal
+    };
+
+    setOrcamentoAtual(atualizado);
+
+    // Auto-salvar no SQLite / IndexedDB imediatamente
+    try {
+      setSalvando(true);
+      const salvo = await storageRepository.saveOrcamento(atualizado);
+      const orcs = await storageRepository.getOrcamentos();
+      setOrcamentos(orcs);
+      exibirToast(`✅ "${item.descricao}" adicionado e salvo no Histórico (#${salvo.numeroSequencial})!`, 'sucesso');
+    } catch (err) {
+      console.error('Erro ao auto-salvar item:', err);
+      exibirToast(`Item adicionado à proposta. Clique em Salvar para gravar no banco.`, 'info');
+    } finally {
+      setSalvando(false);
+    }
   };
 
-  const handleRemoverItem = (id: string) => {
-    setOrcamentoAtual(prev => ({
-      ...prev,
-      itens: prev.itens.filter(i => i.id !== id)
-    }));
+  const handleRemoverItem = async (id: string) => {
+    const novosItens = orcamentoAtual.itens.filter(i => i.id !== id);
+    const atualizado: Orcamento = {
+      ...orcamentoAtual,
+      itens: novosItens
+    };
+    setOrcamentoAtual(atualizado);
+    try {
+      await storageRepository.saveOrcamento(atualizado);
+      const orcs = await storageRepository.getOrcamentos();
+      setOrcamentos(orcs);
+      exibirToast('Item removido do orçamento.', 'info');
+    } catch (err) {
+      console.error('Erro ao salvar após remoção:', err);
+    }
   };
 
   const handleAtualizarItem = (itemAtualizado: ItemOrcamento) => {
@@ -228,11 +281,50 @@ export default function App() {
   // Salvar Orçamento
   const handleSalvarOrcamento = async () => {
     setSalvando(true);
-    await storageRepository.saveOrcamento(orcamentoAtual);
-    const orcs = await storageRepository.getOrcamentos();
-    setOrcamentos(orcs);
-    setSalvando(false);
+    try {
+      const salvo = await storageRepository.saveOrcamento(orcamentoAtual);
+      const orcs = await storageRepository.getOrcamentos();
+      setOrcamentos(orcs);
+      setOrcamentoAtual(salvo);
+      exibirToast(`✅ Orçamento #${salvo.numeroSequencial} salvo com sucesso no banco de dados SQLite!`, 'sucesso');
+    } catch (err) {
+      console.error('Erro ao salvar orçamento:', err);
+      const detalhe = err instanceof Error ? err.message : 'Falha na conexão com o banco';
+      exibirToast(`❌ Erro ao salvar: ${detalhe}`, 'alerta');
+    } finally {
+      setSalvando(false);
+    }
   };
+
+  // Navegar para o Histórico com salvamento automático
+  const handleNavegarParaHistorico = async () => {
+    if (orcamentoAtual.itens.length > 0) {
+      try {
+        setSalvando(true);
+        const salvo = await storageRepository.saveOrcamento(orcamentoAtual);
+        const orcs = await storageRepository.getOrcamentos();
+        setOrcamentos(orcs);
+        exibirToast(`✅ Orçamento #${salvo.numeroSequencial} atualizado no histórico!`, 'sucesso');
+      } catch (err) {
+        console.error('Erro ao auto-salvar ao abrir histórico:', err);
+      } finally {
+        setSalvando(false);
+      }
+    }
+    setAbaAtiva('historico');
+  };
+
+  // Atalho de Teclado Ctrl+S / Cmd+S
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSalvarOrcamento();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [orcamentoAtual]);
 
   // Criar Novo Orçamento em Branco
   const handleCriarNovoOrcamento = async () => {
@@ -397,8 +489,8 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => setAbaAtiva('historico')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              onClick={handleNavegarParaHistorico}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                 abaAtiva === 'historico'
                   ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
                   : 'text-slate-400 hover:text-slate-200'
@@ -432,7 +524,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setModalMateriaisAberto(true)}
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 hover:border-amber-500/40 transition"
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 hover:border-amber-500/40 transition cursor-pointer"
               title="Tabela de Preços e Perfis de Aço (Metalon, Cantoneiras, etc.)"
             >
               <Layers className="w-4 h-4 text-amber-400" />
@@ -443,17 +535,17 @@ export default function App() {
               type="button"
               onClick={handleSalvarOrcamento}
               disabled={salvando}
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition"
-              title="Salvar no banco de dados SQLite permanente"
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-md shadow-emerald-950 transition active:scale-95 cursor-pointer"
+              title="Salvar no banco de dados SQLite permanente (Ctrl+S)"
             >
-              <Save className="w-4 h-4 text-emerald-400" />
-              <span className="hidden sm:inline">{salvando ? 'Salvando...' : 'Salvar'}</span>
+              <Save className="w-4 h-4 text-white" />
+              <span>{salvando ? 'Salvando...' : 'Salvar'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setModalConfigAberto(true)}
-              className="p-2 rounded-lg bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-amber-400 border border-slate-800 transition"
+              className="p-2 rounded-lg bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-amber-400 border border-slate-800 transition cursor-pointer"
               title="Configurações da Oficina e Backup"
             >
               <Settings className="w-4 h-4" />
@@ -482,7 +574,7 @@ export default function App() {
             3. Proposta A4
           </button>
           <button
-            onClick={() => setAbaAtiva('historico')}
+            onClick={handleNavegarParaHistorico}
             className={`px-3 py-1 rounded whitespace-nowrap ${abaAtiva === 'historico' ? 'bg-amber-500 text-black font-bold' : 'text-slate-400'}`}
           >
             Histórico ({orcamentos.length})
@@ -595,6 +687,22 @@ export default function App() {
                     </div>
                   ))}
                 </div>
+
+                {/* Barra de Resumo e Salvar Rápido */}
+                <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span className="text-xs text-slate-400">
+                    Total em estruturas ({orcamentoAtual.itens.length} {orcamentoAtual.itens.length === 1 ? 'item' : 'itens'}): <strong className="text-amber-400 font-mono text-sm">R$ {orcamentoAtual.precoVendaFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSalvarOrcamento}
+                    disabled={salvando}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white transition shadow-sm cursor-pointer"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    {salvando ? 'Salvando...' : 'Salvar no Histórico'}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -638,12 +746,22 @@ export default function App() {
               onAtualizarGarantia={(g) => setOrcamentoAtual(prev => ({ ...prev, garantiaMeses: g }))}
             />
 
-            {/* Botão de Avanço para a Proposta */}
-            <div className="flex justify-end gap-4 pt-4">
+            {/* Botões de Ação Final */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={handleSalvarOrcamento}
+                disabled={salvando}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-sm px-6 py-3.5 rounded-xl shadow-lg shadow-emerald-950 transition active:scale-95 cursor-pointer"
+              >
+                <Save className="w-5 h-5" />
+                {salvando ? 'Salvando no Banco...' : 'Salvar Orçamento no Histórico'}
+              </button>
+
               <button
                 type="button"
                 onClick={() => setAbaAtiva('proposta')}
-                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm px-8 py-3.5 rounded-xl shadow-xl shadow-amber-950 transition active:scale-95"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm px-8 py-3.5 rounded-xl shadow-xl shadow-amber-950 transition active:scale-95 cursor-pointer"
               >
                 <FileText className="w-5 h-5" />
                 Visualizar Proposta Comercial do Cliente
@@ -662,6 +780,8 @@ export default function App() {
           <PropostaClienteA4
             orcamento={orcamentoAtual}
             empresaConfig={empresaConfig}
+            onSalvar={handleSalvarOrcamento}
+            salvando={salvando}
           />
         )}
 
@@ -698,6 +818,21 @@ export default function App() {
           onClose={() => setModalMateriaisAberto(false)}
           onMateriaisAlterados={recarregarDados}
         />
+      )}
+
+      {/* Toast de Notificação Flutuante */}
+      {toastMensagem && (
+        <div className="fixed bottom-6 right-6 z-50 animate-bounce-in max-w-md">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-sm font-semibold backdrop-blur-md ${
+            toastMensagem.tipo === 'sucesso'
+              ? 'bg-emerald-950/95 text-emerald-300 border-emerald-500/50 shadow-emerald-950/80'
+              : toastMensagem.tipo === 'alerta'
+              ? 'bg-rose-950/95 text-rose-300 border-rose-500/50 shadow-rose-950/80'
+              : 'bg-slate-900/95 text-amber-300 border-amber-500/50 shadow-slate-950/80'
+          }`}>
+            <span>{toastMensagem.texto}</span>
+          </div>
+        </div>
       )}
     </div>
   );

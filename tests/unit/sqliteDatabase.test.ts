@@ -137,4 +137,15 @@ describe('Banco de Dados Relacional SQLite Local (node:sqlite)', () => {
     db.deleteMaterial('metalon-teste-60x40');
     expect(db.getMaterialById('metalon-teste-60x40')).toBeNull();
   });
+
+  it('deve evitar colisão de número sequencial ao salvar orçamentos com o mesmo número inicial', () => {
+    const orc1 = db.saveOrcamento({ id: 'orc-colisao-1', numeroSequencial: 101, precoVendaFinal: 1000 });
+    expect(orc1.numeroSequencial).toBe(101);
+
+    // Salvar segundo orçamento com novo id mas com numeroSequencial 101 repetido
+    const orc2 = db.saveOrcamento({ id: 'orc-colisao-2', numeroSequencial: 101, precoVendaFinal: 2500 });
+    expect(orc2.numeroSequencial).toBe(102);
+
+    expect(db.getOrcamentos().length).toBe(2);
+  });
 });

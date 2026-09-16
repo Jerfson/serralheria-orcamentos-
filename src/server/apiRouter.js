@@ -154,9 +154,14 @@ export async function handleApiRequest(req, res, dbInstance) {
         return true;
       }
       if (method === 'POST') {
-        const body = await readJsonBody(req);
-        const saved = db.saveOrcamento(body);
-        sendJson(res, 201, saved);
+        try {
+          const body = await readJsonBody(req);
+          const saved = db.saveOrcamento(body);
+          sendJson(res, 201, saved);
+        } catch (err) {
+          console.error('[API Error] Falha ao salvar orçamento:', err);
+          sendJson(res, 500, { error: err.message || 'Falha interna ao salvar orçamento' });
+        }
         return true;
       }
     }

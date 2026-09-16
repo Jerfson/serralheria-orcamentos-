@@ -267,15 +267,31 @@ export class StorageRepository {
   public async saveOrcamento(orcamento: Orcamento): Promise<Orcamento> {
     orcamento.dataAtualizacao = new Date().toISOString();
     if (!orcamento.dataCriacao) orcamento.dataCriacao = orcamento.dataAtualizacao;
-    if (!orcamento.numeroSequencial) {
+
+    // Verificar se número sequencial está vazio ou em conflito com outro orçamento
+    const orcs = await this.getOrcamentos();
+    const numeroEmUso = orcs.some(o => o.numeroSequencial === orcamento.numeroSequencial && o.id !== orcamento.id);
+    if (!orcamento.numeroSequencial || orcamento.numeroSequencial <= 0 || numeroEmUso) {
       orcamento.numeroSequencial = await this.getProximoNumeroSequencial();
     }
 
-    const salvoLocal = await offlineDB.save('orcamentos', orcamento);
     if (this.sqliteAvailable) {
-      const remoto = await apiClient.saveOrcamento(orcamento);
-      if (remoto) return remoto;
+      try {
+        const remoto = await apiClient.saveOrcamento(orcamento);
+        if (remoto) {
+          try {
+            await offlineDB.save('orcamentos', remoto);
+          } catch {
+            // Ignora erro de cache
+          }
+          return remoto;
+        }
+      } catch (err) {
+        console.warn('Erro ao salvar no SQLite API, mantendo em IndexedDB:', err);
+      }
     }
+
+    const salvoLocal = await offlineDB.save('orcamentos', orcamento);
     return salvoLocal;
   }
 

@@ -15,7 +15,7 @@ export function gerarMensagemWhatsApp(orcamento: Orcamento, empresa: EmpresaConf
   texto += `🔧 *ITENS INCLUSOS:*\n`;
   orcamento.itens.forEach((item, index) => {
     texto += `${index + 1}. *${item.descricao}* (${item.quantidadeUnidades}x)\n`;
-    texto += `   • Dimensões: ${item.medidas.larguraM}m de largura x ${item.medidas.alturaM}m de altura\n`;
+    texto += `   • Dimensões: ${item.medidas.larguraM}m de largura x ${item.medidas.alturaM}m de altura${item.medidas.profundidadeM ? ` x ${item.medidas.profundidadeM}m de profundidade` : ''}\n`;
     texto += `   • Acabamento: ${item.acabamento}\n`;
   });
 

@@ -46,6 +46,7 @@ export function calcularCustosDiretos(entrada: EntradaCustosDiretos): SaidaCusto
 
   let totalAcessorios = 0;
   let totalMaoDeObra = 0;
+  let totalMateriaisManuais = 0;
   let areaTotalM2 = 0;
 
   for (const item of itens) {
@@ -65,20 +66,22 @@ export function calcularCustosDiretos(entrada: EntradaCustosDiretos): SaidaCusto
       totalMaoDeObra += custoFab + custoInst;
     }
 
+    // 3. Materiais diretos manuais (chapas, metalon avulso ou itens especiais)
+    if (item.ajustesManuais?.custoMaterialManual !== undefined) {
+      totalMateriaisManuais += item.ajustesManuais.custoMaterialManual * (item.quantidadeUnidades || 1);
+    }
+
     // Área para cálculo de insumos proporcionais
     const area = (item.medidas.larguraM || 1) * (item.medidas.alturaM || 1) * (item.quantidadeUnidades || 1);
     areaTotalM2 += area;
   }
 
-  // 3. Insumos automáticos de serralheria proporcionais à área total:
-  // - Solda (eletrodo/MIG): aprox. R$ 9,00 por m² de estrutura
-  // - Discos de corte e desbaste: aprox. R$ 5,00 por m²
-  // - Primer anticorrosivo (zarcão) e diluente: aprox. R$ 6,00 por m²
-  // Total médio de insumos: ~R$ 20,00 por m²
+  // 4. Insumos automáticos de serralheria proporcionais à área total (~R$ 20,00 por m²)
   const custoInsumosEstimado = Number((areaTotalM2 * 20.0).toFixed(2));
+  const custoAcoTotalFinal = Number((custoAcoTotal + totalMateriaisManuais).toFixed(2));
 
   const custoDiretoTotal = Number((
-    custoAcoTotal +
+    custoAcoTotalFinal +
     custoInsumosEstimado +
     totalAcessorios +
     totalMaoDeObra +
@@ -87,7 +90,7 @@ export function calcularCustosDiretos(entrada: EntradaCustosDiretos): SaidaCusto
   ).toFixed(2));
 
   return {
-    custoAcoTotal: Number(custoAcoTotal.toFixed(2)),
+    custoAcoTotal: custoAcoTotalFinal,
     custoInsumosTotal: custoInsumosEstimado,
     custoAcessoriosTotal: Number(totalAcessorios.toFixed(2)),
     custoMaoDeObraTotal: Number(totalMaoDeObra.toFixed(2)),

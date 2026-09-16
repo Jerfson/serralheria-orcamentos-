@@ -9,7 +9,8 @@ export type TipoEstrutura =
   | 'corrimao' 
   | 'guarda_corpo' 
   | 'cobertura' 
-  | 'personalizado';
+  | 'personalizado'
+  | 'fabricacao_especial';
 
 export interface PecaLinearDemanda {
   id: string;

@@ -526,9 +526,18 @@ export default function App() {
                           <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 mt-1">
                             <span>Qtd: <strong>{item.quantidadeUnidades}x</strong></span>
                             <span>•</span>
-                            <span>Dimensões: <strong>{item.medidas.larguraM}m x {item.medidas.alturaM}m</strong></span>
-                            <span>•</span>
-                            <span>Peças cortadas: <strong>{item.pecasDemandadas.reduce((a, b) => a + b.quantidade, 0)}</strong></span>
+                            <span>Dimensões: <strong>{item.medidas.larguraM}m x {item.medidas.alturaM}m{item.medidas.profundidadeM ? ` x ${item.medidas.profundidadeM}m` : ''}</strong></span>
+                            {item.tipoEstrutura === 'fabricacao_especial' ? (
+                              <>
+                                <span>•</span>
+                                <span className="text-amber-400 font-medium">Fabricação Especial Sob Medida</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>•</span>
+                                <span>Peças cortadas: <strong>{item.pecasDemandadas.reduce((a, b) => a + b.quantidade, 0)}</strong></span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

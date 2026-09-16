@@ -103,6 +103,10 @@ export class StorageRepository {
     return offlineDB.save('materiais', material);
   }
 
+  public async deleteMaterial(id: string): Promise<void> {
+    return offlineDB.delete('materiais', id);
+  }
+
   public async restaurarMateriaisPadrao(): Promise<void> {
     for (const m of CATALOGO_PERFIS_PADRAO) {
       await offlineDB.save('materiais', m);

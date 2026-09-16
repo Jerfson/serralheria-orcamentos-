@@ -8,9 +8,14 @@ import { Plus, Trash2, Sliders, Box, Ruler, Check } from 'lucide-react';
 interface ItemBuilderProps {
   materiais: MaterialPerfil[];
   onAdicionarItem: (item: ItemOrcamento) => void;
+  onAbrirGerenciadorMateriais?: () => void;
 }
 
-export const ItemBuilder: React.FC<ItemBuilderProps> = ({ materiais, onAdicionarItem }) => {
+export const ItemBuilder: React.FC<ItemBuilderProps> = ({ 
+  materiais, 
+  onAdicionarItem,
+  onAbrirGerenciadorMateriais 
+}) => {
   const [tipoEstrutura, setTipoEstrutura] = useState<TipoEstrutura>('portao_basculante');
   const [descricao, setDescricao] = useState('');
   const [larguraM, setLarguraM] = useState<number>(3.00);
@@ -175,15 +180,27 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({ materiais, onAdicionar
       {/* Perfis Selecionados, Travessas e Quantidade */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
         <div>
-          <label className="block text-xs text-slate-400 mb-1">
-            Perfil do Requadro / Quadro
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs text-slate-400">
+              Perfil do Requadro / Quadro
+            </label>
+            {onAbrirGerenciadorMateriais && (
+              <button
+                type="button"
+                onClick={onAbrirGerenciadorMateriais}
+                className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold underline"
+                title="Cadastrar novo metalon ou atualizar preços"
+              >
+                + Gerenciar Perfis
+              </button>
+            )}
+          </div>
           <select
             value={perfilQuadroId}
             onChange={(e) => setPerfilQuadroId(e.target.value)}
             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
           >
-            {materiais.map((m) => (
+            {materiais.filter(m => m.ativo !== false || m.id === perfilQuadroId).map((m) => (
               <option key={m.id} value={m.id}>
                 {m.descricao} (R$ {m.precoBarra6m.toFixed(2)}/barra 6m)
               </option>
@@ -192,15 +209,27 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({ materiais, onAdicionar
         </div>
 
         <div>
-          <label className="block text-xs text-slate-400 mb-1">
-            Perfil das Réguas / Preenchimento
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-xs text-slate-400">
+              Perfil das Réguas / Preenchimento
+            </label>
+            {onAbrirGerenciadorMateriais && (
+              <button
+                type="button"
+                onClick={onAbrirGerenciadorMateriais}
+                className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold underline"
+                title="Cadastrar novo metalon ou atualizar preços"
+              >
+                + Gerenciar Perfis
+              </button>
+            )}
+          </div>
           <select
             value={perfilPreenchimentoId}
             onChange={(e) => setPerfilPreenchimentoId(e.target.value)}
             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
           >
-            {materiais.map((m) => (
+            {materiais.filter(m => m.ativo !== false || m.id === perfilPreenchimentoId).map((m) => (
               <option key={m.id} value={m.id}>
                 {m.descricao} (R$ {m.precoBarra6m.toFixed(2)}/barra 6m)
               </option>

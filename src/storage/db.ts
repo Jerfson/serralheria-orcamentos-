@@ -78,10 +78,35 @@ export class OfflineDatabase {
     });
   }
 
+  private memoryStorage = new Map<string, string>();
+
+  private getFallback(key: string): string | null {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        return localStorage.getItem(key);
+      }
+    } catch {
+      // Ignorar e usar memória
+    }
+    return this.memoryStorage.get(key) || null;
+  }
+
+  private setFallback(key: string, value: string): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(key, value);
+        return;
+      }
+    } catch {
+      // Ignorar e usar memória
+    }
+    this.memoryStorage.set(key, value);
+  }
+
   public async getStore<T>(storeName: string): Promise<T[]> {
     const db = await this.init();
     if (!db) {
-      const fallback = localStorage.getItem(`serralheria_${storeName}`);
+      const fallback = this.getFallback(`serralheria_${storeName}`);
       return fallback ? JSON.parse(fallback) : [];
     }
 
@@ -122,7 +147,7 @@ export class OfflineDatabase {
       } else {
         items.push(item);
       }
-      localStorage.setItem(`serralheria_${storeName}`, JSON.stringify(items));
+      this.setFallback(`serralheria_${storeName}`, JSON.stringify(items));
       return item;
     }
 
@@ -141,7 +166,7 @@ export class OfflineDatabase {
     if (!db) {
       const items = await this.getStore<any>(storeName);
       const filtered = items.filter((i: any) => i.id !== id);
-      localStorage.setItem(`serralheria_${storeName}`, JSON.stringify(filtered));
+      this.setFallback(`serralheria_${storeName}`, JSON.stringify(filtered));
       return;
     }
 

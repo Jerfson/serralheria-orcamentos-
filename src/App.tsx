@@ -18,6 +18,7 @@ import { VisaoOficina } from './components/orcamento/VisaoOficina';
 import { PropostaClienteA4 } from './components/proposta/PropostaClienteA4';
 import { ListaOrcamentos } from './components/orcamento/ListaOrcamentos';
 import { ConfigEmpresaModal } from './components/config/ConfigEmpresaModal';
+import { GerenciadorMateriaisModal } from './components/materiais/GerenciadorMateriaisModal';
 
 // Ícones
 import { 
@@ -31,7 +32,8 @@ import {
   Save, 
   Check, 
   Eye, 
-  Building2 
+  Building2,
+  Layers
 } from 'lucide-react';
 
 export default function App() {
@@ -42,6 +44,7 @@ export default function App() {
   const [materiais, setMateriais] = useState<MaterialPerfil[]>([]);
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [modalConfigAberto, setModalConfigAberto] = useState(false);
+  const [modalMateriaisAberto, setModalMateriaisAberto] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
   // Orçamento em Edição
@@ -393,6 +396,16 @@ export default function App() {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => setModalMateriaisAberto(true)}
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-amber-300 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 hover:border-amber-500/40 transition"
+              title="Tabela de Preços e Perfis de Aço (Metalon, Cantoneiras, etc.)"
+            >
+              <Layers className="w-4 h-4 text-amber-400" />
+              <span className="hidden sm:inline">Perfis & Aço</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handleSalvarOrcamento}
               disabled={salvando}
               className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 transition"
@@ -439,6 +452,12 @@ export default function App() {
           >
             Histórico ({orcamentos.length})
           </button>
+          <button
+            onClick={() => setModalMateriaisAberto(true)}
+            className="px-3 py-1 rounded whitespace-nowrap bg-slate-800 text-amber-300 font-semibold border border-slate-700"
+          >
+            ⚙️ Perfis
+          </button>
         </div>
       </header>
 
@@ -469,6 +488,7 @@ export default function App() {
             <ItemBuilder
               materiais={materiais}
               onAdicionarItem={handleAdicionarItem}
+              onAbrirGerenciadorMateriais={() => setModalMateriaisAberto(true)}
             />
 
             {/* Lista de Itens do Orçamento */}
@@ -617,6 +637,15 @@ export default function App() {
           }}
           onClose={() => setModalConfigAberto(false)}
           onDadosRestaurados={recarregarDados}
+        />
+      )}
+
+      {/* Modal de Gerenciamento de Materiais e Perfis (Metalon, Cantoneiras, etc.) */}
+      {modalMateriaisAberto && (
+        <GerenciadorMateriaisModal
+          materiais={materiais}
+          onClose={() => setModalMateriaisAberto(false)}
+          onMateriaisAlterados={recarregarDados}
         />
       )}
     </div>

@@ -25,6 +25,7 @@ export interface EntradaPrecificacao {
   descontoPercentual?: number;
   descontoValor?: number;
   condicoesPagamento: CondicoesPagamento;
+  valorItensPrecoDireto?: number;
 }
 
 export interface SaidaPrecificacao {
@@ -71,9 +72,11 @@ export function calcularCustosDiretos(entrada: EntradaCustosDiretos): SaidaCusto
       totalMateriaisManuais += item.ajustesManuais.custoMaterialManual * (item.quantidadeUnidades || 1);
     }
 
-    // Área para cálculo de insumos proporcionais
-    const area = (item.medidas.larguraM || 1) * (item.medidas.alturaM || 1) * (item.quantidadeUnidades || 1);
-    areaTotalM2 += area;
+    // Área para cálculo de insumos proporcionais (não aplica a itens com preço de venda direto fixo)
+    if (!item.ajustesManuais?.precoVendaManual) {
+      const area = (item.medidas.larguraM || 1) * (item.medidas.alturaM || 1) * (item.quantidadeUnidades || 1);
+      areaTotalM2 += area;
+    }
   }
 
   // 4. Insumos automáticos de serralheria proporcionais à área total (~R$ 20,00 por m²)
@@ -110,21 +113,26 @@ export function calcularPrecificacaoComercial(entrada: EntradaPrecificacao): Sai
     metodoMargem = 'sobre_receita',
     descontoPercentual = 0,
     descontoValor = 0,
-    condicoesPagamento
+    condicoesPagamento,
+    valorItensPrecoDireto = 0
   } = entrada;
 
   // Limitar margem sobre receita a no máximo 95% para evitar divisão por zero
   const margemLimitada = Math.min(95, Math.max(0, margemLucroPercentual));
 
-  let precoVendaBruto = 0;
+  let precoVendaBrutoParametrico = 0;
 
-  if (metodoMargem === 'sobre_receita') {
-    // Preço = Custo / (1 - Margem/100)
-    precoVendaBruto = Number((custoDiretoTotal / (1 - margemLimitada / 100)).toFixed(2));
-  } else {
-    // Preço = Custo * (1 + Margem/100)
-    precoVendaBruto = Number((custoDiretoTotal * (1 + margemLimitada / 100)).toFixed(2));
+  if (custoDiretoTotal > 0) {
+    if (metodoMargem === 'sobre_receita') {
+      // Preço = Custo / (1 - Margem/100)
+      precoVendaBrutoParametrico = Number((custoDiretoTotal / (1 - margemLimitada / 100)).toFixed(2));
+    } else {
+      // Preço = Custo * (1 + Margem/100)
+      precoVendaBrutoParametrico = Number((custoDiretoTotal * (1 + margemLimitada / 100)).toFixed(2));
+    }
   }
+
+  const precoVendaBruto = Number((precoVendaBrutoParametrico + valorItensPrecoDireto).toFixed(2));
 
   // Desconto
   let valorDescontoCalculado = 0;

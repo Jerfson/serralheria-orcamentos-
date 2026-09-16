@@ -98,4 +98,57 @@ describe('Cálculo de Custos e Precificação de Fabricação Especial (Churrasq
     const plano = processarPlanoCorteConsolidado([itemChurrasqueira], []);
     expect(plano).toEqual([]);
   });
+
+  it('deve permitir cadastrar churrasqueira com Preço Direto de Venda sem exigir cálculo de custos diretos', () => {
+    const itemChurrasqueiraPrecoDireto: ItemOrcamento = {
+      id: 'item-churras-direto',
+      orcamentoId: 'orc-123',
+      descricao: 'Churrasqueira Parrilla Sob Medida',
+      tipoEstrutura: 'fabricacao_especial',
+      medidas: {
+        larguraM: 0.80,
+        alturaM: 0.90,
+        profundidadeM: 0.50
+      },
+      quantidadeUnidades: 1,
+      acabamento: 'Pintura para alta temperatura 600°C',
+      pecasDemandadas: [],
+      acessorios: [],
+      horasFabricacao: 0,
+      horasInstalacao: 0,
+      ajustesManuais: {
+        precoVendaManual: 1200.00
+      },
+      subtotalCustoDireto: 0,
+      subtotalPrecoVenda: 1200.00
+    };
+
+    const custos = calcularCustosDiretos({
+      itens: [itemChurrasqueiraPrecoDireto],
+      custoAcoTotal: 0,
+      empresaConfig: empresa
+    });
+
+    // Sem custo direto exigido
+    expect(custos.custoAcoTotal).toBe(0);
+    expect(custos.custoMaoDeObraTotal).toBe(0);
+    expect(custos.custoInsumosTotal).toBe(0);
+    expect(custos.custoDiretoTotal).toBe(0);
+
+    // Precificação comercial deve receber diretamente o preço de venda de R$ 1.200,00
+    const precificacao = calcularPrecificacaoComercial({
+      custoDiretoTotal: custos.custoDiretoTotal,
+      margemLucroPercentual: 30,
+      metodoMargem: 'sobre_receita',
+      condicoesPagamento: {
+        tipo: 'a_vista_pix',
+        descricaoDetalhada: 'À vista'
+      },
+      valorItensPrecoDireto: 1200.00
+    });
+
+    expect(precificacao.precoVendaBruto).toBe(1200.00);
+    expect(precificacao.precoVendaFinal).toBe(1200.00);
+    expect(precificacao.vendaComPrejuizo).toBe(false);
+  });
 });

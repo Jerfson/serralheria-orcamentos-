@@ -161,6 +161,11 @@ export const PropostaClienteA4: React.FC<PropostaClienteA4Props> = ({
                       <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium">
                         Qtd: {item.quantidadeUnidades} {item.quantidadeUnidades > 1 ? 'unidades' : 'unidade'}
                       </span>
+                      {item.ajustesManuais?.precoVendaManual !== undefined && (
+                        <span className="text-xs bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded font-bold">
+                          R$ {(item.ajustesManuais.precoVendaManual * item.quantidadeUnidades).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-xs text-slate-700">

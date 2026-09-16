@@ -150,7 +150,17 @@ export default function App() {
     });
   }, [orcamentoAtual.itens, acessoriosGlobais, custoAcoTotal, orcamentoAtual.custoFrete, orcamentoAtual.outrosCustos, empresaConfig]);
 
-  // 3. Recalcular Precificação Comercial (BDI)
+  // 3. Itens com Preço de Venda Direto (Churrasqueiras, Bancadas ou Peças Especiais sem cálculo fabril)
+  const valorItensPrecoDireto = useMemo(() => {
+    return orcamentoAtual.itens.reduce((acc, item) => {
+      if (item.ajustesManuais?.precoVendaManual !== undefined) {
+        return acc + (item.ajustesManuais.precoVendaManual * (item.quantidadeUnidades || 1));
+      }
+      return acc;
+    }, 0);
+  }, [orcamentoAtual.itens]);
+
+  // 4. Recalcular Precificação Comercial (BDI)
   const precificacao = useMemo(() => {
     return calcularPrecificacaoComercial({
       custoDiretoTotal: custosDiretos.custoDiretoTotal,
@@ -158,7 +168,8 @@ export default function App() {
       metodoMargem: orcamentoAtual.metodoMargem,
       descontoPercentual: orcamentoAtual.descontoPercentual,
       descontoValor: orcamentoAtual.descontoValor,
-      condicoesPagamento: orcamentoAtual.condicoesPagamento
+      condicoesPagamento: orcamentoAtual.condicoesPagamento,
+      valorItensPrecoDireto
     });
   }, [
     custosDiretos.custoDiretoTotal,
@@ -166,7 +177,8 @@ export default function App() {
     orcamentoAtual.metodoMargem,
     orcamentoAtual.descontoPercentual,
     orcamentoAtual.descontoValor,
-    orcamentoAtual.condicoesPagamento
+    orcamentoAtual.condicoesPagamento,
+    valorItensPrecoDireto
   ]);
 
   // Sincronizar cálculos no objeto de orçamento
@@ -527,7 +539,14 @@ export default function App() {
                             <span>Qtd: <strong>{item.quantidadeUnidades}x</strong></span>
                             <span>•</span>
                             <span>Dimensões: <strong>{item.medidas.larguraM}m x {item.medidas.alturaM}m{item.medidas.profundidadeM ? ` x ${item.medidas.profundidadeM}m` : ''}</strong></span>
-                            {item.tipoEstrutura === 'fabricacao_especial' ? (
+                            {item.ajustesManuais?.precoVendaManual !== undefined ? (
+                              <>
+                                <span>•</span>
+                                <span className="text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                  Preço: R$ {(item.ajustesManuais.precoVendaManual * item.quantidadeUnidades).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </span>
+                              </>
+                            ) : item.tipoEstrutura === 'fabricacao_especial' ? (
                               <>
                                 <span>•</span>
                                 <span className="text-amber-400 font-medium">Fabricação Especial Sob Medida</span>

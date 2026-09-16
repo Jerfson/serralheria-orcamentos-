@@ -12,9 +12,7 @@ const PRESETS_ESPECIAIS = [
     larguraM: 0.80,
     alturaM: 0.90,
     profundidadeM: 0.50,
-    custoMaterial: 380,
-    horasFab: 6,
-    horasInst: 0,
+    precoVenda: 1200.00,
     acabamento: 'Pintura para alta temperatura 600°C preto fosco'
   },
   {
@@ -23,9 +21,7 @@ const PRESETS_ESPECIAIS = [
     larguraM: 0.90,
     alturaM: 1.10,
     profundidadeM: 0.60,
-    custoMaterial: 320,
-    horasFab: 5.5,
-    horasInst: 0,
+    precoVenda: 950.00,
     acabamento: 'Pintura para alta temperatura 600°C preto fosco'
   },
   {
@@ -34,9 +30,7 @@ const PRESETS_ESPECIAIS = [
     larguraM: 1.50,
     alturaM: 0.85,
     profundidadeM: 0.70,
-    custoMaterial: 240,
-    horasFab: 4,
-    horasInst: 1,
+    precoVenda: 850.00,
     acabamento: 'Pintura primer zarcão cinza e esmalte sintético'
   },
   {
@@ -45,9 +39,7 @@ const PRESETS_ESPECIAIS = [
     larguraM: 1.00,
     alturaM: 1.20,
     profundidadeM: 0.50,
-    custoMaterial: 160,
-    horasFab: 3,
-    horasInst: 1,
+    precoVenda: 480.00,
     acabamento: 'Pintura esmalte sintético preto brilhante'
   }
 ];
@@ -73,14 +65,12 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({
   const [quantidade, setQuantidade] = useState<number>(1);
   const [acabamento, setAcabamento] = useState('Pintura primer anticorrosivo cinza zarcão');
 
-  // Estado de Fabricação Especial (Churrasqueiras, Bancadas, etc.)
+  // Estado de Fabricação Especial (Churrasqueiras, Bancadas, etc. - Preço de Venda Direto)
   const [nomeEspecial, setNomeEspecial] = useState('Churrasqueira Parrilla em Aço Carbono com Grelha Inox');
   const [larguraEsp, setLarguraEsp] = useState<number>(0.80);
   const [alturaEsp, setAlturaEsp] = useState<number>(0.90);
   const [profundidadeEsp, setProfundidadeEsp] = useState<number>(0.50);
-  const [custoMaterialEsp, setCustoMaterialEsp] = useState<number>(380.00);
-  const [horasFabEsp, setHorasFabEsp] = useState<number>(6.0);
-  const [horasInstEsp, setHorasInstEsp] = useState<number>(0.0);
+  const [precoVendaEsp, setPrecoVendaEsp] = useState<number>(1200.00);
   const [acabamentoEsp, setAcabamentoEsp] = useState('Pintura para alta temperatura 600°C preto fosco');
   const [quantidadeEsp, setQuantidadeEsp] = useState<number>(1);
 
@@ -148,9 +138,7 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({
     setLarguraEsp(preset.larguraM);
     setAlturaEsp(preset.alturaM);
     setProfundidadeEsp(preset.profundidadeM);
-    setCustoMaterialEsp(preset.custoMaterial);
-    setHorasFabEsp(preset.horasFab);
-    setHorasInstEsp(preset.horasInst);
+    setPrecoVendaEsp(preset.precoVenda);
     setAcabamentoEsp(preset.acabamento);
   };
 
@@ -158,6 +146,7 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({
     e.preventDefault();
 
     const qtd = Math.max(1, Number(quantidadeEsp));
+    const precoUnit = Number(precoVendaEsp) || 0;
     const novoItem: ItemOrcamento = {
       id: 'item-esp-' + Math.random().toString(36).substring(2, 9),
       orcamentoId: '',
@@ -172,13 +161,13 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({
       acabamento: acabamentoEsp,
       pecasDemandadas: [],
       acessorios: [],
-      horasFabricacao: Number(horasFabEsp) * qtd,
-      horasInstalacao: Number(horasInstEsp) * qtd,
+      horasFabricacao: 0,
+      horasInstalacao: 0,
       ajustesManuais: {
-        custoMaterialManual: Number(custoMaterialEsp)
+        precoVendaManual: precoUnit
       },
       subtotalCustoDireto: 0,
-      subtotalPrecoVenda: 0
+      subtotalPrecoVenda: precoUnit * qtd
     };
 
     onAdicionarItem(novoItem);
@@ -457,7 +446,7 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              Exemplos Rápidos (Clique para carregar dimensões e custos sugeridos)
+              Exemplos Prontos (Clique para carregar dimensões e preço sugerido)
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {PRESETS_ESPECIAIS.map((preset) => (
@@ -473,8 +462,8 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({
                   <span className="text-[11px] text-slate-400 block truncate">
                     {preset.larguraM}m x {preset.alturaM}m{preset.profundidadeM ? ` x ${preset.profundidadeM}m` : ''}
                   </span>
-                  <span className="text-[10px] text-amber-500/90 font-mono mt-1 block">
-                    Mat: R$ {preset.custoMaterial.toFixed(2)} • {preset.horasFab}h
+                  <span className="text-[10px] text-amber-400 font-bold mt-1 block">
+                    Preço: R$ {preset.precoVenda.toFixed(2)}
                   </span>
                 </button>
               ))}
@@ -582,77 +571,46 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({
             </div>
           </div>
 
-          {/* Custos Diretos e Mão de Obra */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div>
-              <label className="block text-xs text-slate-400 mb-1 flex items-center justify-between">
-                <span className="flex items-center gap-1 font-semibold text-slate-300">
-                  <DollarSign className="w-3.5 h-3.5 text-amber-400" />
-                  Custo Unit. de Materiais (R$)
-                </span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2 text-xs text-slate-500">R$</span>
+          {/* Preço de Venda Direto */}
+          <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <label className="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-amber-400" />
+                  Preço de Venda Unitário (R$)
+                </label>
+                <p className="text-xs text-slate-400">
+                  Valor final cobrado ao cliente por unidade (sem exigir cálculo de custo de materiais nem horas de oficina).
+                </p>
+              </div>
+
+              <div className="relative w-full sm:w-64 shrink-0">
+                <span className="absolute left-3.5 top-2.5 text-sm font-bold text-amber-400">R$</span>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   required
-                  value={custoMaterialEsp}
-                  onChange={(e) => setCustoMaterialEsp(parseFloat(e.target.value) || 0)}
+                  value={precoVendaEsp}
+                  onChange={(e) => setPrecoVendaEsp(parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-sm font-semibold text-slate-100 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-slate-950 border border-amber-500/50 rounded-lg pl-10 pr-3 py-2 text-base font-bold text-slate-100 focus:outline-none focus:border-amber-400"
                 />
               </div>
-              <p className="text-[10px] text-slate-500 mt-1">
-                Chapas, cantoneiras, grelhas ou materiais prontos.
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs text-slate-400 mb-1 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
-                Oficina (Horas/Unid.)
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                value={horasFabEsp}
-                onChange={(e) => setHorasFabEsp(parseFloat(e.target.value) || 0)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500"
-              />
-              <p className="text-[10px] text-slate-500 mt-1">Corte, solda e bancada na oficina</p>
-            </div>
-
-            <div>
-              <label className="block text-xs text-slate-400 mb-1 flex items-center gap-1">
-                <Hammer className="w-3.5 h-3.5 text-amber-400" />
-                Entrega/Obra (Horas/Unid.)
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                value={horasInstEsp}
-                onChange={(e) => setHorasInstEsp(parseFloat(e.target.value) || 0)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-500"
-              />
-              <p className="text-[10px] text-slate-500 mt-1">Instalação e fixação no cliente</p>
             </div>
           </div>
 
-          {/* Resumo Pré-cálculo e Botão Adicionar Especial */}
+          {/* Resumo e Botão Adicionar Especial */}
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-800/80 bg-slate-950/40 p-4 rounded-lg">
             <div className="flex flex-wrap gap-4 text-xs text-slate-300">
               <div>
                 Dimensões: <strong>{larguraEsp}m x {alturaEsp}m{profundidadeEsp ? ` x ${profundidadeEsp}m` : ''}</strong>
               </div>
               <div>
-                Material Total: <strong>R$ {(custoMaterialEsp * Math.max(1, quantidadeEsp)).toFixed(2)}</strong>
+                Qtd: <strong>{quantidadeEsp}x</strong>
               </div>
-              <div>
-                Mão de Obra Total: <strong>{(horasFabEsp * Math.max(1, quantidadeEsp)).toFixed(1)}h oficina + {(horasInstEsp * Math.max(1, quantidadeEsp)).toFixed(1)}h obra</strong>
+              <div className="text-amber-400 font-bold">
+                Valor Total: <strong>R$ {(precoVendaEsp * Math.max(1, quantidadeEsp)).toFixed(2)}</strong>
               </div>
             </div>
 
@@ -661,7 +619,7 @@ export const ItemBuilder: React.FC<ItemBuilderProps> = ({
               className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-lg text-sm transition-all shadow-lg hover:shadow-amber-500/20 active:scale-95 cursor-pointer ml-auto"
             >
               <Flame className="w-4 h-4" />
-              Adicionar Item Especial
+              Adicionar ao Orçamento
             </button>
           </div>
         </div>

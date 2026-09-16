@@ -40,6 +40,7 @@ export interface ItemOrcamento {
     custoMaterialManual?: number;
     custoMaoDeObraManual?: number;
     subtotalManual?: number;
+    precoVendaManual?: number;
   };
   subtotalCustoDireto: number;
   subtotalPrecoVenda: number;

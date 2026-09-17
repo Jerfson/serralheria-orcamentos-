@@ -68,6 +68,21 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`
+┌─────────────────────────────────────────────────────────────┐
+│ ℹ️  O SERVIDOR JÁ ESTÁ ATIVO NESTE COMPUTADOR!             │
+│                                                             │
+│   🌐 Aplicação Web: http://localhost:${PORT}                 │
+│   O sistema já está pronto e rodando nesta porta.           │
+└─────────────────────────────────────────────────────────────┘
+`);
+  } else {
+    console.error('Erro no servidor:', err);
+  }
+});
+
 server.listen(PORT, () => {
   const status = db.getStatus();
   console.log(`
